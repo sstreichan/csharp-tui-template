@@ -21,14 +21,26 @@ jobs:
       id: changelog
       run: |
         echo "## What's Changed" > CHANGELOG.md
-        git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- %s (%h)" >> CHANGELOG.md
-        echo "" >> CHANGELOG.md
-        echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$(git describe --tags --abbrev=0 HEAD^)...${GITHUB_REF_NAME}" >> CHANGELOG.md
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        if [ -n "$PREVIOUS_TAG" ]; then
+          git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$PREVIOUS_TAG...${GITHUB_REF_NAME}" >> CHANGELOG.md
+        else
+          git log --pretty=format:"- %s (%h)" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo "**Full Changelog**: https://github.com/${{ github.repository }}/commits/${GITHUB_REF_NAME}" >> CHANGELOG.md
+        fi
     
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
+    
+    - name: Install Native AOT prerequisites
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang zlib1g-dev
     
     - name: Build Linux x64
       run: dotnet publish --configuration Release --runtime linux-x64 --self-contained true -p:PublishAot=true -p:PublishSingleFile=true -p:PublishTrimmed=true --output ./publish/linux-x64
