@@ -43,13 +43,13 @@ jobs:
         sudo apt-get install -y clang zlib1g-dev
     
     - name: Build Linux x64
-      run: dotnet publish --configuration Release --runtime linux-x64 --self-contained true -p:PublishAot=true -p:PublishSingleFile=true -p:PublishTrimmed=true --output ./publish/linux-x64
+      run: dotnet publish --configuration Release --runtime linux-x64 --self-contained -p:PublishAot=true --output ./publish/linux-x64
     
     - name: Build Windows x64
-      run: dotnet publish --configuration Release --runtime win-x64 --self-contained true -p:PublishAot=true -p:PublishSingleFile=true -p:PublishTrimmed=true --output ./publish/win-x64
+      run: dotnet publish --configuration Release --runtime win-x64 --self-contained -p:PublishAot=true --output ./publish/win-x64
     
     - name: Build macOS x64
-      run: dotnet publish --configuration Release --runtime osx-x64 --self-contained true -p:PublishAot=true -p:PublishSingleFile=true -p:PublishTrimmed=true --output ./publish/osx-x64
+      run: dotnet publish --configuration Release --runtime osx-x64 --self-contained -p:PublishAot=true --output ./publish/osx-x64
     
     - name: Package binaries
       run: |
