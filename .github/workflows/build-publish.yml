@@ -33,6 +33,19 @@ jobs:
       with:
         dotnet-version: '8.0.x'
     
+    - name: Install Native AOT prerequisites (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang zlib1g-dev
+    
+    - name: Install Native AOT prerequisites (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        # Xcode Command Line Tools are pre-installed on GitHub runners
+        # Just verify clang is available
+        clang --version
+    
     - name: Restore dependencies
       run: dotnet restore
     
