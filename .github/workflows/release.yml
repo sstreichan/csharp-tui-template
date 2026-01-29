@@ -1,0 +1,57 @@
+name: Release and Changelog
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Generate Changelog
+      id: changelog
+      run: |
+        echo "## What's Changed" > CHANGELOG.md
+        git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- %s (%h)" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$(git describe --tags --abbrev=0 HEAD^)...${GITHUB_REF_NAME}" >> CHANGELOG.md
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Build Linux x64
+      run: dotnet publish --configuration Release --runtime linux-x64 --self-contained true -p:PublishAot=true -p:PublishSingleFile=true -p:PublishTrimmed=true --output ./publish/linux-x64
+    
+    - name: Build Windows x64
+      run: dotnet publish --configuration Release --runtime win-x64 --self-contained true -p:PublishAot=true -p:PublishSingleFile=true -p:PublishTrimmed=true --output ./publish/win-x64
+    
+    - name: Build macOS x64
+      run: dotnet publish --configuration Release --runtime osx-x64 --self-contained true -p:PublishAot=true -p:PublishSingleFile=true -p:PublishTrimmed=true --output ./publish/osx-x64
+    
+    - name: Package binaries
+      run: |
+        cd publish/linux-x64 && tar -czf ../../tui-app-linux-x64.tar.gz tui-app && cd ../..
+        cd publish/win-x64 && zip -r ../../tui-app-win-x64.zip tui-app.exe && cd ../..
+        cd publish/osx-x64 && tar -czf ../../tui-app-osx-x64.tar.gz tui-app && cd ../..
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        body_path: CHANGELOG.md
+        files: |
+          tui-app-linux-x64.tar.gz
+          tui-app-win-x64.zip
+          tui-app-osx-x64.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
